@@ -17,7 +17,7 @@ def process_song_file(cur, filepath):
     """
     
     df = pd.read_json(filepath, lines=True)
-
+    # retrieve every row as a list
     artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values[0]
     artist_data = artist_data.tolist() 
     cur.execute(artist_table_insert, artist_data)
@@ -83,17 +83,26 @@ def process_data(cur, conn, filepath, func):
             Returns: 
                     None
     """    
+    # --------- old code : this part can be simpilify as below ------------
+    # all_files = []
+    # for root, dirs, files in os.walk(filepath):
+    #     # glob could be used to find files recursively
+    #     files = glob.glob(os.path.join(root,'*.json'))
+    #     for f in files :
+    #         all_files.append(os.path.abspath(f))
 
+    # num_files = len(all_files)
+    # print('{} files found in {}'.format(num_files, filepath))
+    
     all_files = []
-    for root, dirs, files in os.walk(filepath):
-        files = glob.glob(os.path.join(root,'*.json'))
-        for f in files :
-            all_files.append(os.path.abspath(f))
-
+    files = glob.glob(os.path.join(filepath, '**/*.json'), recursive = True)
+    for file in files:
+        all_files.append(os.path.abspath(file))
+    
     num_files = len(all_files)
     print('{} files found in {}'.format(num_files, filepath))
 
-    for i, datafile in enumerate(all_files, 1):
+    for i, datafile in enumerate(all_files, start=1):
         func(cur, datafile)
         conn.commit()
         print('{}/{} files processed.'.format(i, num_files))
@@ -106,7 +115,7 @@ def main():
     
     """    
     
-    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=admin password=admin")
     cur = conn.cursor()
 
     process_data(cur, conn, filepath='data/song_data', func=process_song_file)
